@@ -28,8 +28,8 @@ find_package(visualization_msgs REQUIRED)
 find_package(builtin_interfaces REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(std_srvs REQUIRED)
+find_package(openvdb_vendor REQUIRED)
 
-find_package(OpenVDB REQUIRED)
 remove_definitions(-DDISABLE_LIBUSB-1.0)
 find_package(Eigen3 REQUIRED)
 find_package(Boost REQUIRED COMPONENTS system thread)
@@ -67,11 +67,10 @@ set(dependencies
   tf2_sensor_msgs
   visualization_msgs
   builtin_interfaces
+  openvdb_vendor
 )
 
 set(library_name spatio_temporal_voxel_layer_core)
-
-add_definitions(${EIGEN3_DEFINITIONS})
 
 set(srv_files "srv/SaveGrid.srv")
 rosidl_generate_interfaces(${PROJECT_NAME}
@@ -80,13 +79,15 @@ rosidl_generate_interfaces(${PROJECT_NAME}
 )
 rosidl_get_typesupport_target(cpp_typesupport_target "${PROJECT_NAME}" "rosidl_typesupport_cpp")
 
+# Get a linker error when there are undefined symbols
+add_link_options(-Wl,--no-undefined)
+
 include_directories(
     include
     ${BOOST_INCLUDE_DIRS}
     ${EIGEN3_INCLUDE_DIRS}
     ${PCL_INCLUDE_DIRS}
     ${Boost_INCLUDE_DIRS}
-    ${OpenVDB_INCLUDE_DIR}
 )
 
 add_library(${library_name} SHARED
@@ -105,7 +106,7 @@ target_link_libraries(${library_name}
   ${Boost_LIBRARIES}
   ${EIGEN3_LIBRARIES}
   ${PCL_LIBRARIES}
-  ${OpenVDB_LIBRARIES}
+  OpenVDB::openvdb
 )
 
 ament_target_dependencies(${library_name} ${dependencies})
