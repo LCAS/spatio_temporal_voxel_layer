@@ -47,7 +47,7 @@
 // STVL
 #include "spatio_temporal_voxel_layer/frustum_models/frustum.hpp"
 
-namespace geometry
+namespace spatio_temporal_voxel_layer
 {
 
 // A class to model a depth sensor frustum in world space

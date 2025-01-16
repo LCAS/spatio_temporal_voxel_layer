@@ -56,7 +56,7 @@
 // ROS
 #include "rclcpp/rclcpp.hpp"
 
-namespace geometry
+namespace spatio_temporal_voxel_layer
 {
 
 // A structure for maintaining vectors and points in world spaces

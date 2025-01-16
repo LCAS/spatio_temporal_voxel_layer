@@ -42,7 +42,7 @@
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "tf2_sensor_msgs/tf2_sensor_msgs.hpp"
 
-namespace buffer
+namespace spatio_temporal_voxel_layer
 {
 
 using namespace std::chrono_literals;
@@ -92,7 +92,7 @@ void MeasurementBuffer::BufferROSCloud(
 /*****************************************************************************/
 {
   // add a new measurement to be populated
-  _observation_list.push_front(observation::MeasurementReading());
+  _observation_list.push_front(MeasurementReading());
 
   const std::string origin_frame =
     _sensor_frame == "" ? cloud.header.frame_id : _sensor_frame;
@@ -191,11 +191,10 @@ void MeasurementBuffer::BufferROSCloud(
 
 /*****************************************************************************/
 void MeasurementBuffer::GetReadings(
-  std::vector<observation::MeasurementReading> & observations)
+  std::vector<MeasurementReading> & observations)
 /*****************************************************************************/
 {
   RemoveStaleObservations();
-
   for (readings_iter it = _observation_list.begin();
     it != _observation_list.end(); ++it)
   {
@@ -218,7 +217,7 @@ void MeasurementBuffer::RemoveStaleObservations(void)
   }
 
   for (it = _observation_list.begin(); it != _observation_list.end(); ++it) {
-    const rclcpp::Duration time_diff = clock_->now() - it->_cloud->header.stamp;
+    const rclcpp::Duration time_diff = _last_updated - it->_cloud->header.stamp;
 
     if (time_diff > _observation_keep_time) {
       _observation_list.erase(it, _observation_list.end());

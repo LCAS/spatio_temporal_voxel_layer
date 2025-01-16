@@ -38,7 +38,7 @@
 #include <vector>
 #include "spatio_temporal_voxel_layer/frustum_models/depth_camera_frustum.hpp"
 
-namespace geometry
+namespace spatio_temporal_voxel_layer
 {
 
 /*****************************************************************************/

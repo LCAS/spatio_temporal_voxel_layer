@@ -37,7 +37,7 @@
 
 #include <spatio_temporal_voxel_layer/frustum_models/three_dimensional_lidar_frustum.hpp>
 
-namespace geometry
+namespace spatio_temporal_voxel_layer
 {
 
 /*****************************************************************************/
