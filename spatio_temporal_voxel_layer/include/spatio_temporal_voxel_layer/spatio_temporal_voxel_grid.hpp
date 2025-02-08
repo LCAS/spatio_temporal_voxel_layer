@@ -135,72 +135,6 @@ struct matrix_hash : std::unary_function<T, size_t> {
   }
 };
 
-// constant parameters
-
-// struct MappingParameters {
-
-//   /* map properties */
-//   Eigen::Vector3d map_origin_, map_size_;
-//   Eigen::Vector3d map_min_boundary_, map_max_boundary_;  // map range in pos
-//   Eigen::Vector3i map_voxel_num_;                        // map range in index
-//   Eigen::Vector3d local_update_range_;
-//   double resolution_, resolution_inv_;
-//   double map_lef_bottom_x, map_lef_bottom_y;
-//   double obstacles_inflation_;
-//   string frame_id_;
-//   int pose_type_;
-//   double free_space_car_radius;
-//   double free_space_z_ground;
-//   std::vector<double> free_segment_dim_;
-
-//   /* local map update and clear */
-//   int local_map_margin_;
-
-//   /* visualization and computation time display */
-//   double visualization_truncate_height_, virtual_ceil_height_, ground_height_;
-//   bool show_occ_time_;
-
-//   /* active mapping */
-//   double unknown_flag_;
-// };
-
-// intermediate mapping data for fusion
-
-// struct MappingData {
-//   // main map data, occupancy of each voxel and Euclidean distance
-
-//   std::vector<char> occupancy_buffer_inflate_;
-
-//   // camera position and pose data
-
-//   Eigen::Vector3d camera_pos_, last_camera_pos_;
-//   Eigen::Quaterniond camera_q_, last_camera_q_;
-
-//   // depth image data
-//   int image_cnt_;
-//   // flags of map state
-
-//   bool occ_need_update_, local_updated_;
-//   bool has_first_depth_;
-//   bool has_odom_, has_cloud_;
-
-//   // depth image projected point cloud
-
-//   vector<Eigen::Vector3d> proj_points_;
-//   int proj_points_cnt;
-
-//   // flag buffers for speeding up raycasting
-//   // range of updating grid
-
-//   Eigen::Vector3i local_bound_min_, local_bound_max_;
-
-//   // computation time
-
-//   double fuse_time_, max_fuse_time_;
-//   int update_num_;
-
-//   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-// };
 
 enum GlobalDecayModel
 {
@@ -280,11 +214,6 @@ public:
   void resetBuffer();
   void resetBuffer(Eigen::Vector3d min, Eigen::Vector3d max);
   
-  // std::vector<Eigen::Vector3d> nearestObstaclesToCurrentPose(Eigen::Vector3d x);
-  // double getFreeDistance(Eigen::Vector3d x);
-  // void getCloseObstacle(Eigen::Vector3d x, Eigen::Vector3d& close_obs, double& dis);
-  // Eigen::Vector3d closetPointInMap(const Eigen::Vector3d& pt, const Eigen::Vector3d& camera_pt);
-
   void getConvexSegmentsFreeSpace(const std::vector<geometry_msgs::msg::PoseStamped>& poses, 
         vec_E<Polyhedron<3>>& poly_whole, std::vector<LinearConstraint3D>& l_constraints_whole);
 
@@ -296,18 +225,9 @@ public:
 
   void publishUnknown();
 
-  // bool hasDepthObservation();
-  // bool odomValid();
-  // void getRegion(Eigen::Vector3d& ori, Eigen::Vector3d& size);
-  // Eigen::Vector3d getOrigin();
    // get depth image and camera pose
   void odomCallback(const nav_msgs::msg::Odometry::ConstSharedPtr& odom);
   
-  // int getVoxelNum();
-  
-
-  // std::vector<Eigen::Vector3d> getMapCurrentRange();
-
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr map_inf_pub_;
 
   // typedef std::shared_ptr<SpatioTemporalVoxelGrid> Ptr;
@@ -348,11 +268,7 @@ protected:
   std::unordered_map<occupany_cell, uint> * _cost_map;
   boost::mutex _grid_lock;
 
-  // MappingParameters mp_;
-  // MappingData md_;
   std::string mapper_name_;
-  // parent node weak ptr
-  // rclcpp_lifecycle::LifecycleNode::WeakPtr lc_node_;
   // Clock
   rclcpp::Clock::SharedPtr clock_;
   // Logger
@@ -364,9 +280,6 @@ protected:
   default_random_engine eng_;
   int max_queue_size_ = 1;
 
-  // std::shared_ptr<DynamicEDTOctomap> distmap;
-  // std::shared_ptr<octomap::OcTree> oct_tree;
-
   FreeSpaceSegmentManager::Ptr free_seg_manager;
   vec_E<Polyhedron<3>> polyhedra_;
   std::vector<LinearConstraint3D> l_constraints_whole_; 
@@ -376,11 +289,6 @@ protected:
   vec_Vec3f processed_obs_; 
   int inf_step_ = 1;
   std::string global_frame_;
-  // std::mutex mtx_vec_obs_;
-  // std::mutex mtx_point_cloud_;
-
-  // std::vector<Eigen::Matrix<decimal_t, 3, 1>, Eigen::aligned_allocator<Eigen::Matrix<decimal_t, 3, 1>>> converetd_obs;
-  // std::vector<Eigen::Matrix<decimal_t, 3, 1>, Eigen::aligned_allocator<Eigen::Matrix<decimal_t, 3, 1>>> converetd_obs_previous;
 
 
 };
