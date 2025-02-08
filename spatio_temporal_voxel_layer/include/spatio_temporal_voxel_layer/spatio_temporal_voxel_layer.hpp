@@ -221,17 +221,7 @@ public:
     unsigned int mx, my;
     bool found_pose = worldToMap(pos(0), pos(1), mx, my);
     if (!found_pose) return false;
-    // if (pos(0) < mp_.map_min_boundary_(0) + 1e-4 || pos(1) < mp_.map_min_boundary_(1) + 1e-4 ||
-    //     pos(2) < mp_.map_min_boundary_(2) + 1e-4) {
-    //   // cout << "less than min range!" << endl;
-    //   // RCLCPP_INFO_STREAM(logger_, "pos " << pos.transpose()<< " mp_.map_min_boundary_" << mp_.map_min_boundary_);
-    //   return false;
-    // }
-    // if (pos(0) > mp_.map_max_boundary_(0) - 1e-4 || pos(1) > mp_.map_max_boundary_(1) - 1e-4 ||
-    //     pos(2) > mp_.map_max_boundary_(2) - 1e-4) {
-    //       // RCLCPP_INFO_STREAM(logger_, "pos " << pos.transpose()<< " mp_.map_max_boundary_" << mp_.map_max_boundary_);
-    //   return false;
-    // }
+
     return true;
   }
 
@@ -241,11 +231,7 @@ public:
       // RCLCPP_INFO_STREAM(logger_, "int pos " << idx.transpose()<< " mp_.map_min_boundary_" << mp_.map_min_boundary_);
       return false;
     }
-    // if (idx(0) > mp_.map_voxel_num_(0) - 1 || idx(1) > mp_.map_voxel_num_(1) - 1 ||
-    //     idx(2) > mp_.map_voxel_num_(2) - 1) {
-    //       // RCLCPP_INFO_STREAM(logger_, "int pos " << idx.transpose()<< " mp_.map_voxel_num_" << mp_.map_voxel_num_);
-    //   return false;
-    // }
+
     if (idx(0) > size_x_ - 1 || idx(1) > size_y_ - 1) {
           // RCLCPP_INFO_STREAM(logger_, "int pos " << idx.transpose()<< " mp_.map_voxel_num_" << mp_.map_voxel_num_);
       return false;
@@ -255,10 +241,7 @@ public:
 
   
   inline void posToIndex(const Eigen::Vector3d& pos, Eigen::Vector3i& id) {
-    // for (int i = 0; i < 3; ++i) id(i) = floor((pos(i) - mp_.map_origin_(i)) * mp_.resolution_inv_);
-    // id[0] = std::floor((pos(0) -getOriginX()) * getInverseResolution());
-    // id[1] = std::floor((pos(1) -getOriginY()) * getInverseResolution());
-    // id[2] = 1; 
+
     unsigned int mx, my;
     bool found_pose = worldToMap(pos(0), pos(1), mx, my);
     id[0] = mx;
@@ -268,11 +251,7 @@ public:
 
   
   inline void indexToPos(const Eigen::Vector3i& id, Eigen::Vector3d& pos) {
-    // for (int i = 0; i < 3; ++i) pos(i) = (id(i) + 0.5) * mp_.resolution_ + mp_.map_origin_(i);
-    // pos[0] = (id[0] + 0.5) * getResolution() + getOriginX();
-    // pos[1] = (id[1] + 0.5) * getResolution() + getOriginY();
-    // pos[2] = 1; 
-    double wx, wy;
+
     unsigned int mx = static_cast<unsigned int>(id(0));
     unsigned int my = static_cast<unsigned int>(id(1));
 
