@@ -178,43 +178,6 @@ void SpatioTemporalVoxelLayer::onInitialize(void)
   _voxel_grid = std::make_unique<SpatioTemporalVoxelGrid>(
     node->get_clock(), _voxel_size, static_cast<double>(default_value_), _decay_model,
     _voxel_decay, _publish_voxels, inf_step_, _global_frame);
-
-  // std::string node_name = name_ + ".edtf_mapping.";
-  // // /* get parameter */
-  // double x_size, y_size, z_size;
-  // mp_.resolution_ = static_cast<double>(node->declare_parameter( node_name + "resolution", -1.0));
-  // x_size = static_cast<double>(node->declare_parameter( node_name +"map_size_x", -1.0));
-  // y_size = static_cast<double>(node->declare_parameter( node_name +"map_size_y", -1.0));
-  // mp_.map_lef_bottom_x = static_cast<double>(node->declare_parameter( node_name +"map_lef_bottom_x", -1.0));
-  // mp_.map_lef_bottom_y = static_cast<double>(node->declare_parameter( node_name +"map_lef_bottom_y", -1.0));
-  // z_size = static_cast<double>(node->declare_parameter( node_name +"map_size_z", -1.0));
-
-  // RCLCPP_INFO_STREAM(logger_, "resolution: " << mp_.resolution_ );
-  // RCLCPP_INFO_STREAM(logger_, "map_size_x: " << x_size );
-  // RCLCPP_INFO_STREAM(logger_, "map_size_y: " << y_size );
-  // RCLCPP_INFO_STREAM(logger_, "map_lef_bottom_x" << mp_.map_lef_bottom_x );
-  // RCLCPP_INFO_STREAM(logger_, "map_lef_bottom_y" << mp_.map_lef_bottom_y );
-
-  // mp_.local_update_range_(0) = static_cast<double>(node->declare_parameter( node_name +"local_update_range_x", -1.0));
-  // mp_.local_update_range_(1) = static_cast<double>(node->declare_parameter( node_name +"local_update_range_y", -1.0));
-  // mp_.local_update_range_(2) = static_cast<double>(node->declare_parameter( node_name +"local_update_range_z", -1.0));
-  // mp_.obstacles_inflation_ = static_cast<double>(node->declare_parameter( node_name +"obstacles_inflation", -1.0));
-  // mp_.visualization_truncate_height_ = static_cast<double>(node->declare_parameter( node_name +"visualization_truncate_height", 999.0));
-  // mp_.virtual_ceil_height_ = static_cast<double>(node->declare_parameter( node_name +"virtual_ceil_height", -1.0));
-
-
-  // mp_.frame_id_ = _global_frame;
-  // mp_.local_map_margin_ = static_cast<int>(node->declare_parameter( node_name +"local_map_margin", 1));
-  // mp_.ground_height_ = static_cast<double>(node->declare_parameter( node_name +"ground_height", 1.0));
-  // mp_.map_size_ = Eigen::Vector3d(x_size, y_size, z_size);
-  
-  // mp_.free_space_car_radius = static_cast<double>(node->declare_parameter( node_name + "free_space_segmentation.car_radius", 1.0));
-  // mp_.free_space_z_ground = static_cast<double>(node->declare_parameter( node_name + "free_space_segmentation.z_ground", 1.0));
-  // mp_.free_segment_dim_ = static_cast<std::vector<double>>(node->declare_parameter( node_name + "free_space_segmentation.free_segment_dim", std::vector<double>{}));
-  
-
-  // _voxel_grid->map_inf_pub_ = map_inf_pub_;
-  // _voxel_grid->initEDTMap(node_name, mp_);
  
   matchSize();
 
@@ -468,26 +431,6 @@ void SpatioTemporalVoxelLayer::LaserScanCallback(
   buffer->BufferROSCloud(cloud);
   buffer->Unlock();
 
-  // const double oldestOdometryTime = robotOdometryPoseCache_.getOldestTime().seconds();
-  // const double currentPointCloudTime = rclcpp::Time(message->header.stamp).seconds();
-
-  //   // if (currentPointCloudTime < oldestPoseTime) {
-  //   //   auto clock = clock_;
-  //   //   RCLCPP_WARN_THROTTLE(logger_, *(clock), 5, "No corresponding point cloud and pose are found. Waiting for first match. (Warning message is throttled, 5s.)");
-  //   //   return;
-  //   // } else {
-  //   //   RCLCPP_INFO(logger_, "First corresponding point cloud and pose found, elevation mapping started. ");
-  //   //   receivedFirstMatchingPointcloudAndPose_ = true;
-  //   // }
-
-  //   if (currentPointCloudTime < oldestOdometryTime) {
-  //     auto clock = clock_;
-  //     RCLCPP_WARN_STREAM(logger_, "Cant find poseeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee");
-  //     return;
-  //   }else{
-  //     RCLCPP_WARN_STREAM(logger_, "Can find poseeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee");
-  //   }
-
 }
 
 /*****************************************************************************/
@@ -533,9 +476,6 @@ void SpatioTemporalVoxelLayer::PointCloud2Callback(
   const std::shared_ptr<MeasurementBuffer> & buffer)
 /*****************************************************************************/
 {
-  // if(point_cloud_counter_< 20){
-  //   RCLCPP_INFO(logger_, "===== get cloud ====");
-  // }
   
   if (!buffer->IsEnabled()) {
     return;
