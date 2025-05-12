@@ -47,14 +47,16 @@
 #include "geometry_msgs/msg/quaternion.hpp"
 #include "sensor_msgs/msg/point_cloud2.hpp"
 
+
+
+namespace spatio_temporal_voxel_layer
+{
+
 enum ModelType
 {
   DEPTH_CAMERA = 0,
   THREE_DIMENSIONAL_LIDAR = 1
 };
-
-namespace observation
-{
 
 // Measurement Reading
 struct MeasurementReading

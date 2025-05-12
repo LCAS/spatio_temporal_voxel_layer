@@ -42,28 +42,28 @@
 
 #include "spatio_temporal_voxel_layer/spatio_temporal_voxel_grid.hpp"
 
-namespace volume_grid
+namespace spatio_temporal_voxel_layer
 {
 
 /*****************************************************************************/
 SpatioTemporalVoxelGrid::SpatioTemporalVoxelGrid(
   rclcpp::Clock::SharedPtr clock,
   const float & voxel_size, const double & background_value,
-  const int & decay_model, const double & voxel_decay, const bool & pub_voxels)
+  const int & decay_model, const double & voxel_decay, const bool & pub_voxels, const int& inf_step, const std::string global_frame)
 : _clock(clock), _decay_model(decay_model), _background_value(background_value),
-  _voxel_size(voxel_size), _voxel_decay(voxel_decay), _pub_voxels(pub_voxels),
+  _voxel_size(voxel_size), _voxel_decay(voxel_decay), _pub_voxels(pub_voxels), inf_step_(inf_step),
   _grid_points(std::make_unique<std::vector<geometry_msgs::msg::Point32>>()),
-  _cost_map(new std::unordered_map<occupany_cell, uint>)
+  _cost_map(new std::unordered_map<occupany_cell, uint>), global_frame_(global_frame)
 /*****************************************************************************/
 {
   this->InitializeGrid();
+  vec_obs_ = std::make_shared<vec_Vec3f>();
 }
 
 /*****************************************************************************/
 SpatioTemporalVoxelGrid::~SpatioTemporalVoxelGrid(void)
 /*****************************************************************************/
 {
-  // pcl pointclouds free themselves
   if (_cost_map) {
     delete _cost_map;
   }
@@ -94,7 +94,7 @@ void SpatioTemporalVoxelGrid::InitializeGrid(void)
 
 /*****************************************************************************/
 void SpatioTemporalVoxelGrid::ClearFrustums(
-  const std::vector<observation::MeasurementReading> & clearing_readings,
+  const std::vector<spatio_temporal_voxel_layer::MeasurementReading> & clearing_readings,
   std::unordered_set<occupany_cell> & cleared_cells)
 /*****************************************************************************/
 {
@@ -111,7 +111,6 @@ void SpatioTemporalVoxelGrid::ClearFrustums(
   _cost_map->clear();
 
   std::vector<frustum_model> obs_frustums;
-
   if (clearing_readings.size() == 0) {
     TemporalClearAndGenerateCostmap(obs_frustums, cleared_cells);
     return;
@@ -119,16 +118,16 @@ void SpatioTemporalVoxelGrid::ClearFrustums(
 
   obs_frustums.reserve(clearing_readings.size());
 
-  std::vector<observation::MeasurementReading>::const_iterator it =
+  std::vector<spatio_temporal_voxel_layer::MeasurementReading>::const_iterator it =
     clearing_readings.begin();
   for (; it != clearing_readings.end(); ++it) {
-    geometry::Frustum * frustum = nullptr;
+    Frustum * frustum;
     if (it->_model_type == DEPTH_CAMERA) {
-      frustum = new geometry::DepthCameraFrustum(
+      frustum = new DepthCameraFrustum(
         it->_vertical_fov_in_rad,
         it->_horizontal_fov_in_rad, it->_min_z_in_m, it->_max_z_in_m);
     } else if (it->_model_type == THREE_DIMENSIONAL_LIDAR) {
-      frustum = new geometry::ThreeDimensionalLidarFrustum(
+      frustum = new ThreeDimensionalLidarFrustum(
         it->_vertical_fov_in_rad, it->_vertical_fov_padding_in_m,
         it->_horizontal_fov_in_rad, it->_min_z_in_m, it->_max_z_in_m);
     } else {
@@ -244,15 +243,13 @@ void SpatioTemporalVoxelGrid::PopulateCostmapAndPointcloud(
   if (cell != _cost_map->end()) {
     cell->second += 1;
   } else {
-    _cost_map->insert(
-      std::make_pair(
-        occupany_cell(pose_world[0], pose_world[1]), 1));
+    _cost_map->insert(std::make_pair(occupany_cell(pose_world[0], pose_world[1]), 1));
   }
 }
 
 /*****************************************************************************/
 void SpatioTemporalVoxelGrid::Mark(
-  const std::vector<observation::MeasurementReading> & marking_readings)
+  const std::vector<spatio_temporal_voxel_layer::MeasurementReading> & marking_readings)
 /*****************************************************************************/
 {
   boost::unique_lock<boost::mutex> lock(_grid_lock);
@@ -260,17 +257,16 @@ void SpatioTemporalVoxelGrid::Mark(
   // mark the grid
   if (marking_readings.size() > 0) {
     for (uint i = 0; i != marking_readings.size(); i++) {
-      (*this)(marking_readings.at(i));
+        (*this)(marking_readings.at(i));
     }
   }
 }
 
 /*****************************************************************************/
-void SpatioTemporalVoxelGrid::operator()(
-  const observation::MeasurementReading & obs) const
-/*****************************************************************************/
-{
+void SpatioTemporalVoxelGrid::operator()(const spatio_temporal_voxel_layer::MeasurementReading & obs) {
+
   if (obs._marking) {
+
     float mark_range_2 = obs._obstacle_range_in_m * obs._obstacle_range_in_m;
     const double cur_time = _clock->now().seconds();
 
@@ -279,13 +275,20 @@ void SpatioTemporalVoxelGrid::operator()(
     sensor_msgs::PointCloud2ConstIterator<float> iter_y(cloud, "y");
     sensor_msgs::PointCloud2ConstIterator<float> iter_z(cloud, "z");
 
-    for (; iter_x != iter_x.end();
-      ++iter_x, ++iter_y, ++iter_z)
-    {
+    processed_obs_ = *vec_obs_;
+
+    Eigen::Vector3d p3d, p3d_inf;
+
+    int inf_step = inf_step_;
+    int inf_step_z = 1;
+
+    vec_obs_->clear();
+    for (; iter_x != iter_x.end(); ++iter_x, ++iter_y, ++iter_z){
       float distance_2 =
         (*iter_x - obs._origin.x) * (*iter_x - obs._origin.x) +
         (*iter_y - obs._origin.y) * (*iter_y - obs._origin.y) +
         (*iter_z - obs._origin.z) * (*iter_z - obs._origin.z);
+
       if (distance_2 > mark_range_2 || distance_2 < 0.0001) {
         continue;
       }
@@ -293,17 +296,12 @@ void SpatioTemporalVoxelGrid::operator()(
       double x = *iter_x < 0 ? *iter_x - _voxel_size : *iter_x;
       double y = *iter_y < 0 ? *iter_y - _voxel_size : *iter_y;
       double z = *iter_y < 0 ? *iter_z - _voxel_size : *iter_z;
-
-      openvdb::Vec3d mark_grid(this->WorldToIndex(
-          openvdb::Vec3d(x, y, z)));
-
-      if (!this->MarkGridPoint(
-          openvdb::Coord(
-            mark_grid[0], mark_grid[1],
-            mark_grid[2]), cur_time))
-      {
+      openvdb::Vec3d mark_grid(this->WorldToIndex(openvdb::Vec3d(x, y, z)));
+      if (!this->MarkGridPoint(openvdb::Coord(mark_grid[0], mark_grid[1], mark_grid[2]), cur_time)){
         std::cout << "Failed to mark point." << std::endl;
       }
+      p3d(0) = x, p3d(1) = y, p3d(2) = z;
+
     }
   }
 }

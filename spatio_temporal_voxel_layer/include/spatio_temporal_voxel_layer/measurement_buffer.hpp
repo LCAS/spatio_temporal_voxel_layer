@@ -66,7 +66,7 @@
 // Mutex
 #include "boost/thread.hpp"
 
-namespace buffer
+namespace spatio_temporal_voxel_layer
 {
 
 enum class Filters
@@ -77,7 +77,7 @@ enum class Filters
 };
 
 // conveniences for line lengths
-typedef std::list<observation::MeasurementReading>::iterator readings_iter;
+typedef std::list<MeasurementReading>::iterator readings_iter;
 typedef std::unique_ptr<sensor_msgs::msg::PointCloud2> point_cloud_ptr;
 
 // Measurement buffer
@@ -119,7 +119,7 @@ public:
   void BufferROSCloud(const sensor_msgs::msg::PointCloud2 & cloud);
 
   // Get measurements from the buffer
-  void GetReadings(std::vector<observation::MeasurementReading> & observations);
+  void GetReadings(std::vector<MeasurementReading> & observations);
 
   // enabler setter getter
   bool IsEnabled(void) const;
@@ -156,7 +156,7 @@ private:
   rclcpp::Time _last_updated;
   boost::recursive_mutex _lock;
   std::string _global_frame, _sensor_frame, _source_name, _topic_name;
-  std::list<observation::MeasurementReading> _observation_list;
+  std::list<MeasurementReading> _observation_list;
   double _min_obstacle_height, _max_obstacle_height, _obstacle_range, _tf_tolerance;
   double _min_z, _max_z, _vertical_fov, _vertical_fov_padding, _horizontal_fov;
   double _decay_acceleration, _voxel_size;

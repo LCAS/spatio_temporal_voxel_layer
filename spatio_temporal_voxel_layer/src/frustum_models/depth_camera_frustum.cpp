@@ -38,7 +38,7 @@
 #include <vector>
 #include "spatio_temporal_voxel_layer/frustum_models/depth_camera_frustum.hpp"
 
-namespace geometry
+namespace spatio_temporal_voxel_layer
 {
 
 /*****************************************************************************/
@@ -324,8 +324,8 @@ double DepthCameraFrustum::Dot(
 /*****************************************************************************/
 {
   return plane_pt.x * query_pt[0] +
-         plane_pt.y * query_pt[1] +
-         plane_pt.z * query_pt[2];
+        plane_pt.y * query_pt[1] +
+        plane_pt.z * query_pt[2];
 }
 
 /*****************************************************************************/
@@ -334,8 +334,8 @@ double DepthCameraFrustum::Dot(
 /*****************************************************************************/
 {
   return plane_pt.x * query_pt[0] +
-         plane_pt.y * query_pt[1] +
-         plane_pt.z * query_pt[2];
+        plane_pt.y * query_pt[1] +
+        plane_pt.z * query_pt[2];
 }
 
 }  // namespace geometry

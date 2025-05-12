@@ -67,6 +67,12 @@
 #include "openvdb/tools/GridTransformer.h"
 #include "openvdb/tools/RayIntersector.h"
 
+#include <pcl_conversions/pcl_conversions.h>
+#include <pcl/point_types.h>
+#include <pcl/PCLPointCloud2.h>
+#include <pcl/conversions.h>
+#include <pcl_ros/transforms.hpp>
+
 // measurement struct and buffer
 #include "spatio_temporal_voxel_layer/measurement_buffer.hpp"
 #include "spatio_temporal_voxel_layer/frustum_models/depth_camera_frustum.hpp"
@@ -75,8 +81,59 @@
 #include "boost/thread.hpp"
 #include "boost/thread/recursive_mutex.hpp"
 
-namespace volume_grid
+#include <Eigen/Eigen>
+#include <Eigen/StdVector>
+#include <cv_bridge/cv_bridge.h>
+#include <geometry_msgs/msg/pose_stamped.hpp>
+#include <iostream>
+#include <random>
+#include <nav_msgs/msg/odometry.hpp>
+#include <queue>
+#include <rclcpp/rclcpp.hpp>
+#include <tuple>
+#include <visualization_msgs/msg/marker.hpp>
+
+#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
+#include <pcl_conversions/pcl_conversions.h>
+
+#include <type_traits>
+#include <thread>
+
+#include <message_filters/subscriber.h>
+#include <message_filters/sync_policies/approximate_time.h>
+#include <message_filters/sync_policies/exact_time.h>
+#include <message_filters/time_synchronizer.h>
+#include <rclcpp_lifecycle/lifecycle_node.hpp>
+#include <dynamicEDT3D/dynamicEDTOctomap.h>
+#include <octomap/octomap.h>
+
+#include <decomp_basis/data_type.h>
+// #include <octomap_msgs/conversions.h>
+
+#include <any>
+
+namespace spatio_temporal_voxel_layer
 {
+
+using namespace std;
+using namespace std::chrono_literals;
+using std::placeholders::_1;
+using std::placeholders::_2;
+
+// voxel hashing
+template <typename T>
+struct matrix_hash : std::unary_function<T, size_t> {
+  std::size_t operator()(T const& matrix) const {
+    size_t seed = 0;
+    for (size_t i = 0; i < matrix.size(); ++i) {
+      auto elem = *(matrix.data() + i);
+      seed ^= std::hash<typename T::Scalar>()(elem) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+    }
+    return seed;
+  }
+};
+
 
 enum GlobalDecayModel
 {
@@ -104,7 +161,7 @@ struct occupany_cell
 // Structure for wrapping frustum model and necessary metadata
 struct frustum_model
 {
-  frustum_model(geometry::Frustum * _frustum, const double & _factor)
+  frustum_model(Frustum * _frustum, const double & _factor)
   : frustum(_frustum), accel_factor(_factor)
   {
   }
@@ -114,7 +171,7 @@ struct frustum_model
       delete frustum;
     }
   }
-  geometry::Frustum * frustum;
+  Frustum * frustum;
   const double accel_factor;
 };
 
@@ -130,14 +187,15 @@ public:
     rclcpp::Clock::SharedPtr clock,
     const float & voxel_size, const double & background_value,
     const int & decay_model, const double & voxel_decay,
-    const bool & pub_voxels);
+    const bool & pub_voxels, const int& inf_step, const std::string global_frame);
   ~SpatioTemporalVoxelGrid(void);
 
   // Core making and clearing functions
-  void Mark(const std::vector<observation::MeasurementReading> & marking_observations);
-  void operator()(const observation::MeasurementReading & obs) const;
+  void Mark(const std::vector<MeasurementReading> & marking_observations);
+  void operator()(const MeasurementReading & obs);
+  void setValue() const;
   void ClearFrustums(
-    const std::vector<observation::MeasurementReading> & clearing_observations,
+    const std::vector<MeasurementReading> & clearing_observations,
     std::unordered_set<occupany_cell> & cleared_cells);
 
   // Get the pointcloud of the underlying occupancy grid
@@ -186,6 +244,25 @@ protected:
   std::unique_ptr<std::vector<geometry_msgs::msg::Point32>> _grid_points;
   std::unordered_map<occupany_cell, uint> * _cost_map;
   boost::mutex _grid_lock;
+
+  std::string mapper_name_;
+  // Clock
+  rclcpp::Clock::SharedPtr clock_;
+  // Logger
+  rclcpp::Logger logger_{rclcpp::get_logger("edtmapping")};
+  std::shared_ptr<std::thread> pointcloud_processor;
+
+  uniform_real_distribution<double> rand_noise_;
+  normal_distribution<double> rand_noise2_;
+  default_random_engine eng_;
+  int max_queue_size_ = 1;
+
+  std::shared_ptr<vec_Vec3f> vec_obs_;
+  vec_Vec3f processed_obs_; 
+  int inf_step_ = 1;
+  std::string global_frame_;
+
+
 };
 
 }  // namespace volume_grid
@@ -194,9 +271,9 @@ protected:
 namespace std
 {
 template<>
-struct hash<volume_grid::occupany_cell>
+struct hash<spatio_temporal_voxel_layer::occupany_cell>
 {
-  std::size_t operator()(const volume_grid::occupany_cell & k) const
+  std::size_t operator()(const spatio_temporal_voxel_layer::occupany_cell & k) const
   {
     return (std::hash<double>()(k.x) ^ (std::hash<double>()(k.y) << 1)) >> 1;
   }
