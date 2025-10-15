@@ -40,7 +40,7 @@ find_package(rclcpp_lifecycle REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(Boost REQUIRED COMPONENTS system thread)
-find_package(PCL REQUIRED COMPONENTS filters common_utility)
+find_package(PCL REQUIRED COMPONENTS filters)
 find_package(Threads REQUIRED)
 
 if(NOT "${PCL_LIBRARIES}" STREQUAL "")
